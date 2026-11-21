@@ -61,21 +61,22 @@ estimate_arrival_rates <- function(data, window_start, window_end) {
         current <- previous_time
         while (current < event_time) {
           hour_of_day <- floor ((current %% 86400)/3600)
-          finish <- min(event_time, (floor(current/3600)+1)*3600)
-          availability[s,as.character(hour_of_day)] <- availability[s,as.character(hour_of_day)] + (finish-current)/3600
-          current <- finish
-        }}
+          end <- min(event_time, (floor(current/3600)+1)*3600)
+          availability[s,as.character(hour_of_day)] <- availability[s,as.character(hour_of_day)] + (end-current)/3600
+          current <- end
+        }
       }
       inventory <- inventory + station_events$inventory_change[i]
       previous_time <- event_time
+      }
     }
     if (inventory > 0) {
       current <- previous_time
       while(current < window_end) {
         hour_of_day <- floor((current %% 86400)/3600)
-        finish <- min(window_end, (floor(current/3600)+1)*3600)
-        availability[s,as.character(hour_of_day)] <- availability[s,as.character(hour_of_day)] + (finish-current)/3600
-        current <- finish
+        end <- min(window_end, (floor(current/3600)+1)*3600)
+        availability[s,as.character(hour_of_day)] <- availability[s,as.character(hour_of_day)] + (end-current)/3600
+        current <- end
       }
     }
   }
@@ -97,16 +98,18 @@ estimate_arrival_rates <- function(data, window_start, window_end) {
   
   while(current < window_end) {
     hour_of_day <- floor((current %% 86400)/3600)
-    finish <- min(window_end, (floor(current/3600) + 1)*3600)
-    hours[hour_of_day +1] <- hours[hour_of_day+1] + (finish-current)/3600
-    current <- finish
+    end <- min(window_end, (floor(current/3600) + 1)*3600)
+    hours[hour_of_day +1] <- hours[hour_of_day+1] + (end-current)/3600
+    current <- end
   }
   
-  trips$available_hours <- 0
+  trips$available_hours <- rep(0, nrow(trips))
+  if (nrow(trips) > 0) {
   for (i in 1:nrow(trips)) {
     o <- trips$origin[i]
     hour_of_day <- trips$hour[i]
     trips$available_hours[i] <- availability[o,as.character(hour_of_day)]
+    }
   }
   
   trips <- trips %>%
