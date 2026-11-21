@@ -98,12 +98,13 @@ estimate_arrival_rates <- function(data, window_start, window_end) {
     mutate(time = as.numeric(ymd_hms(start_time)),
            hour = hour(ymd_hms(start_time)))%>%
     filter(time >= window_start, time < window_end) %>%
+    #determine how many trips occurred for each combination of these:
     count(origin = start_station, 
           destination = end_station, 
           hour, 
           name = "departures")
     
-  #determine observation hours and arrival rates
+  #determine observation hours
   hours <- rep(0,24)
   current <- window_start
   
@@ -116,18 +117,25 @@ estimate_arrival_rates <- function(data, window_start, window_end) {
     current <- end
   }
   
+  #create column of available hours
   trips$available_hours <- rep(0, nrow(trips))
   if (nrow(trips) > 0) {
   for (i in 1:nrow(trips)) {
     origin <- trips$origin[i]
     hour_of_day <- trips$hour[i]
+    #using the availability matrix, retrieve the value corresponding to the station 
+    #and the hour of day
     trips$available_hours[i] <- availability[origin,as.character(hour_of_day)]
     }
   }
   
+  #calculate observed rate, availability, rate
   trips <- trips %>%
+    #determine observed rate by dividing departures by total number of hours
     mutate(observed_rate = departures/hours[hour+1],
+           #determine proportion of time that bikes were available
            availability = available_hours / hours[hour+1],
+           #determine the rate of departures over available number of hours
            rate = ifelse(available_hours > 0, departures/available_hours, NA)) %>%
     select(origin, destination, hour, observed_rate, availability, rate)
   return(trips)
