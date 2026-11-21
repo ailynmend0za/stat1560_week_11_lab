@@ -12,8 +12,8 @@
 estimate_arrival_rates <- function(data, window_start, window_end) {
   window_start <- as.numeric(ymd_hms(window_start))
   window_end <- as.numeric(ymd_hms(window_end))
-  #input data checks: check that data is a data frame, window start/end times not missing,
-  #and that end comes after start time
+  #input data checks: check that data is a data frame, window start/end times 
+  #not missing, and that end comes after start time
   stopifnot(
     is.data.frame(data),
     all(c("start_station", "end_station", "start_time", "end_time") %in% names(data)),
