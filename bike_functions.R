@@ -12,7 +12,8 @@
 estimate_arrival_rates <- function(data, window_start, window_end) {
   window_start <- as.numeric(ymd_hms(window_start))
   window_end <- as.numeric(ymd_hms(window_end))
-  #input data checks
+  #input data checks: check that data is a data frame, window start/end times not missing,
+  #and that end comes after start time
   stopifnot(
     is.data.frame(data),
     all(c("start_station", "end_station", "start_time", "end_time") %in% names(data)),
@@ -49,6 +50,7 @@ estimate_arrival_rates <- function(data, window_start, window_end) {
   
   #determine how many hours each station has at least one bike available during each hour
   for (s in stations) {
+    #create smaller data frame that has events for the current station
     station_events <- events %>% filter(station == s)
     inventory <- sum(station_events$inventory_change[station_events$time < window_start])
     previous_time <- window_start
@@ -60,12 +62,20 @@ estimate_arrival_rates <- function(data, window_start, window_end) {
       if (inventory > 0) {
         current <- previous_time
         while (current < event_time) {
+          #determine what hour of day the time is from; determine number of seconds 
+          #that have passed within the current day, then divide by 3600 to convert 
+          #from seconds to hours; round the value to the nearest whole number
           hour_of_day <- floor ((current %% 86400)/3600)
+          #determine when interval should end, 
+          #either at the start of the next event, or the end of the current hour
           end <- min(event_time, (floor(current/3600)+1)*3600)
-          availability[s,as.character(hour_of_day)] <- availability[s,as.character(hour_of_day)] + (end-current)/3600
+          #update availability matrix for the current station and hour
+          availability[s,as.character(hour_of_day)] <- 
+            availability[s,as.character(hour_of_day)] + (end-current)/3600
           current <- end
         }
       }
+      #update inventory and time
       inventory <- inventory + station_events$inventory_change[i]
       previous_time <- event_time
       }
@@ -75,7 +85,8 @@ estimate_arrival_rates <- function(data, window_start, window_end) {
       while(current < window_end) {
         hour_of_day <- floor((current %% 86400)/3600)
         end <- min(window_end, (floor(current/3600)+1)*3600)
-        availability[s,as.character(hour_of_day)] <- availability[s,as.character(hour_of_day)] + (end-current)/3600
+        availability[s,as.character(hour_of_day)] <- 
+          availability[s,as.character(hour_of_day)] + (end-current)/3600
         current <- end
       }
     }
@@ -97,8 +108,10 @@ estimate_arrival_rates <- function(data, window_start, window_end) {
   current <- window_start
   
   while(current < window_end) {
+    #determine what hour of day you are in
     hour_of_day <- floor((current %% 86400)/3600)
     end <- min(window_end, (floor(current/3600) + 1)*3600)
+    #need to use hours_of_day + 1 because hours begin at 0
     hours[hour_of_day +1] <- hours[hour_of_day+1] + (end-current)/3600
     current <- end
   }
@@ -106,9 +119,9 @@ estimate_arrival_rates <- function(data, window_start, window_end) {
   trips$available_hours <- rep(0, nrow(trips))
   if (nrow(trips) > 0) {
   for (i in 1:nrow(trips)) {
-    o <- trips$origin[i]
+    origin <- trips$origin[i]
     hour_of_day <- trips$hour[i]
-    trips$available_hours[i] <- availability[o,as.character(hour_of_day)]
+    trips$available_hours[i] <- availability[origin,as.character(hour_of_day)]
     }
   }
   
