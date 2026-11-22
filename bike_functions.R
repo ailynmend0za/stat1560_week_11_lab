@@ -1,7 +1,8 @@
 #function 1
 #'Estimate NHPP arrival rates
 #'
-#'@description estimate the rate of user requests to travel from an origin station 
+#'@description estimate the rate of user requests to travel from an 
+# origin station 
 #'to a destination station, in requests per hour
 #'@param data data frame containing info on start_station, end_station, 
 #'start_time, and end_time
@@ -14,6 +15,7 @@
 estimate_arrival_rates <- function(data, window_start, window_end) {
   window_start <- as.numeric(ymd_hms(window_start))
   window_end <- as.numeric(ymd_hms(window_end))
+  
   #input data checks: check that data is a data frame, window start/end times 
   #not missing, and that end comes after start time
   stopifnot(
@@ -149,7 +151,7 @@ estimate_arrival_rates <- function(data, window_start, window_end) {
   return(trips)
 }
 
-#function 2
+# function 2
 #' Simulate NHPP arrivals
 #' 
 #' @description simulate customer requests using thinning
