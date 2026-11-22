@@ -200,7 +200,7 @@ simulate_arrivals <- function(rates, start_time, end_time) {
           #find hour of arrival and rate
           hour_of_day <- floor((u %%86400)/3600)
           hourly_rate <- pair_rates$rate[pair_rates$hour == hour_of_day]
-          if (length(hourly_rate) > 0 & runif(1) < hourly_rate/M) {
+          if (length(hourly_rate) > 0 && runif(1) < hourly_rate/M) {
             arrivals <- rbind(arrivals, data.frame(origin = origin,
                                                    destination = destination, 
                                                    arrival_time = u))
