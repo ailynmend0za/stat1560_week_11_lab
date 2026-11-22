@@ -18,7 +18,8 @@ estimate_arrival_rates <- function(data, window_start, window_end) {
   #not missing, and that end comes after start time
   stopifnot(
     is.data.frame(data),
-    all(c("start_station", "end_station", "start_time", "end_time") %in% names(data)),
+    all(c("start_station", "end_station", 
+          "start_time", "end_time") %in% names(data)),
     !is.na(window_start), !is.na(window_end), window_end > window_start
   )
   
@@ -28,13 +29,15 @@ estimate_arrival_rates <- function(data, window_start, window_end) {
   
   #modified from week 10
   events <- data %>%
-    mutate(event_type = ifelse(start_station == "R" | end_station == "R", "R", "C")) %>%
+    mutate(event_type = ifelse(start_station == "R" | end_station == "R", "R", 
+                               "C")) %>%
     pivot_longer(cols = c(start_station, end_station), 
                  names_to = "event",
                  values_to = "station") %>%
     filter(station != "R") %>%
     mutate(
-      time = as.numeric(ymd_hms(ifelse(event == "start_station", start_time, end_time))),
+      time = as.numeric(ymd_hms(ifelse(event == "start_station", start_time, 
+                                       end_time))),
       inventory_change = ifelse(event == "start_station", -1, 1),
       order = case_when(
         event_type == "R" & inventory_change == 1 ~ 1,
@@ -48,9 +51,11 @@ estimate_arrival_rates <- function(data, window_start, window_end) {
   #obtain all station names
   stations <- unique(events$station)
   #create availability matrix
-  availability <- matrix(0,length(stations), 24, dimnames = list(stations, as.character(0:23)))
+  availability <- matrix(0,length(stations), 24, 
+                         dimnames = list(stations, as.character(0:23)))
   
-  #determine how many hours each station has at least one bike available during each hour
+  #determine how many hours each station has at least one bike available 
+  # during each hour
   for (s in stations) {
     #create smaller data frame that has events for the current station
     station_events <- events %>% filter(station == s)
@@ -64,14 +69,14 @@ estimate_arrival_rates <- function(data, window_start, window_end) {
       if (inventory > 0) {
         current <- previous_time
         while (current < event_time) {
-          #determine what hour of day the time is from; determine number of seconds 
-          #that have passed within the current day, then divide by 3600 to convert 
-          #from seconds to hours; round the value down to the nearest whole number
+    #determine what hour of day the time is from; determine number of seconds 
+    #that have passed within the current day, then divide by 3600 to convert 
+    #from seconds to hours; round the value down to the nearest whole number
           hour_of_day <- floor ((current %% 86400)/3600)
-          #determine when interval should end, 
-          #either at the start of the next event, or the end of the current hour
+     #determine when interval should end, 
+     #either at the start of the next event, or the end of the current hour
           end <- min(event_time, (floor(current/3600)+1)*3600)
-          #update availability matrix for the current station and hour
+     #update availability matrix for the current station and hour
           availability[s,as.character(hour_of_day)] <- 
             availability[s,as.character(hour_of_day)] + (end-current)/3600
           current <- end
@@ -125,20 +130,21 @@ estimate_arrival_rates <- function(data, window_start, window_end) {
   for (i in 1:nrow(trips)) {
     origin <- trips$origin[i]
     hour_of_day <- trips$hour[i]
-    #using the availability matrix, retrieve the value corresponding to the station 
-    #and the hour of day
+#using the availability matrix, retrieve the value corresponding to the station 
+#and the hour of day
     trips$available_hours[i] <- availability[origin,as.character(hour_of_day)]
     }
   }
   
-  #calculate observed rate, availability, rate
+#calculate observed rate, availability, rate
   trips <- trips %>%
-    #determine observed rate by dividing departures by total number of hours
+#determine observed rate by dividing departures by total number of hours
     mutate(observed_rate = departures/hours[hour+1],
-           #determine proportion of time that bikes were available
+#determine proportion of time that bikes were available
            availability = available_hours / hours[hour+1],
-           #determine the rate of departures over available number of hours
-           rate = ifelse(available_hours > 0, departures/available_hours, NA)) %>%
+#determine the rate of departures over available number of hours
+           rate = ifelse(available_hours > 0, 
+                         departures/available_hours, NA)) %>%
     select(origin, destination, hour, observed_rate, availability, rate)
   return(trips)
 }
@@ -212,3 +218,4 @@ simulate_arrivals <- function(rates, start_time, end_time) {
     arrange(arrival_time)
   return(arrivals)
 }
+
