@@ -61,9 +61,11 @@ estimate_arrival_rates <- function(data, window_start, window_end) {
   for (s in stations) {
     #create smaller data frame that has events for the current station
     station_events <- events %>% filter(station == s)
-    inventory <- sum(station_events$inventory_change[station_events$time < window_start])
+    inventory <- sum(station_events$inventory_change
+                     [station_events$time < window_start])
     previous_time <- window_start
-    station_events <- station_events %>% filter(time >= window_start, time < window_end)
+    station_events <- station_events %>% filter
+    (time >= window_start, time < window_end)
     
     if (nrow(station_events) > 0) {
     for(i in 1:nrow(station_events)) {
